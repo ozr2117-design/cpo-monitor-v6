@@ -7,7 +7,7 @@ from datetime import datetime
 
 # Page Config
 st.set_page_config(
-    page_title="Global CPO Monitor V6.0",
+    page_title="全球 CPO 监控 V6.0",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -25,6 +25,19 @@ HOLDINGS = {
     "300476.SZ": 0.0877,
     "688183.SS": 0.0861,
     "601138.SS": 0.0672
+}
+
+TICKER_NAMES = {
+    "300502.SZ": "新易盛",
+    "301377.SZ": "鼎泰高科",
+    "300308.SZ": "中际旭创",
+    "688498.SS": "源杰科技",
+    "600183.SS": "生益科技",
+    "002463.SZ": "沪电股份",
+    "688195.SS": "腾景科技",
+    "300476.SZ": "胜宏科技",
+    "688183.SS": "生益电子",
+    "601138.SS": "工业富联"
 }
 
 # --- Helper Functions ---
@@ -144,8 +157,8 @@ def check_signals(data, fund_sim_change):
     return signals
 
 # --- Main App ---
-st.title("Global CPO Monitor V6.0 🌍")
-st.caption(f"Tracking Fund: {FUND_CODE} | Real-time Simulation")
+st.title("全球 CPO 监控 V6.0 🌍")
+st.caption(f"跟踪基金: {FUND_CODE} | 实时模拟")
 
 # Fetch Data
 with st.spinner('Fetching Real-time Data...'):
@@ -161,11 +174,11 @@ if alerts:
         st.toast(alert, icon="🔔")
 
 # --- Layout Section A: Cockpit ---
-st.subheader("🚀 实时驾驶舱 (Cockpit)")
+st.subheader("🚀 实时驾驶舱")
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    st.metric("基金估算 (Fund Sim)", f"{fund_sim_val:.2%}", delta=f"{fund_sim_val:.2%}")
+    st.metric("基金估算", f"{fund_sim_val:.2%}", delta=f"{fund_sim_val:.2%}")
 
 with col2:
     nq_val = market_data.get('nq_change', 0.0)
@@ -173,7 +186,7 @@ with col2:
 
 with col3:
     # Placeholder for Northbound Money
-    st.metric("北向资金 (Northbound)", "Wait", delta="--")
+    st.metric("北向资金", "Wait", delta="--")
 
 with col4:
     # Placeholder for NVDA
@@ -186,52 +199,57 @@ with col5:
 st.divider()
 
 # --- Layout Section B: Tabs ---
-tab1, tab2, tab3 = st.tabs(["📈 归因分析 (Attribution)", "🔗 共振监测 (Resonance)", "📋 持仓详情 (Details)"])
+tab1, tab2, tab3 = st.tabs(["📈 归因分析", "🔗 共振监测", "📋 持仓详情"])
 
 with tab1:
-    st.write("##### Top 10 Holdings Contribution")
+    st.write("##### 前十大重仓股贡献度")
     # Bar chart of weighted contribution
     contrib_data = []
     for t, w in HOLDINGS.items():
         chg = market_data['holdings_change'].get(t, 0.0)
         contrib = chg * w
-        contrib_data.append({"Ticker": t, "Contribution": contrib, "Weight": w, "Change": chg})
+        name = TICKER_NAMES.get(t, t)
+        contrib_data.append({"股票名称": name, "贡献度": contrib, "权重": w, "涨跌幅": chg})
     
     df_contrib = pd.DataFrame(contrib_data)
-    fig_contrib = px.bar(df_contrib, x='Ticker', y='Contribution', 
-                         title="Weighted Contribution to Fund NAV",
-                         color='Contribution',
-                         color_continuous_scale=['red', 'green']) # Red for drop, Green for rise in CN? Usually Red=Rise in CN.
-                         # Standard plotly is Blue/Red. Let's stick to default or make it explicit.
-                         # CN Color: Red = Up, Green = Down.
-    fig_contrib.update_traces(marker_color=df_contrib['Contribution'].apply(lambda x: 'red' if x >= 0 else 'green'))
+    fig_contrib = px.bar(df_contrib, x='股票名称', y='贡献度', 
+                         title="基金净值加权贡献度",
+                         color='贡献度',
+                         color_continuous_scale=['green', 'red']) # China Color: Red = Up, Green = Down.
+                         
+    fig_contrib.update_traces(marker_color=df_contrib['贡献度'].apply(lambda x: 'red' if x >= 0 else 'green'))
     st.plotly_chart(fig_contrib, use_container_width=True)
 
 with tab2:
-    st.write("##### NQ=F vs Fund Sim")
+    st.write("##### 纳指期货 vs 基金估算")
     # Dummy historical data for visualization since we only have snapshot in this simplified logic
     # Real implementation would require historical data fetching
-    st.info("Historical Resonance Chart requires historical data loading. showing Snapshot comparison.")
+    st.info("历史共振图表需要加载历史数据。目前仅显示快照对比。")
     
     comp_df = pd.DataFrame({
-        "Asset": ["NQ=F", "Fund Sim (021528)"],
-        "Change": [market_data.get('nq_change', 0.0), fund_sim_val]
+        "资产": ["纳指期货 (NQ=F)", "基金估算"],
+        "涨跌幅": [market_data.get('nq_change', 0.0), fund_sim_val]
     })
-    fig_res = px.bar(comp_df, x="Asset", y="Change", color="Change", title="Snapshot Comparison")
+    fig_res = px.bar(comp_df, x="资产", y="涨跌幅", color="涨跌幅", title="快照对比")
     st.plotly_chart(fig_res, use_container_width=True)
 
 with tab3:
-    st.write("##### Top 10 Holdings Data")
+    st.write("##### 前十大重仓股详情")
     # Display Data Table
-    df_details = pd.DataFrame(HOLDINGS.items(), columns=["Ticker", "Weight"])
-    df_details["Current Price"] = df_details["Ticker"].map(market_data['holdings_price'])
-    df_details["Change %"] = df_details["Ticker"].map(market_data['holdings_change'])
+    df_details = pd.DataFrame(list(HOLDINGS.items()), columns=["Ticker", "权重"])
+    df_details["名称"] = df_details["Ticker"].map(TICKER_NAMES)
+    df_details["当前价格"] = df_details["Ticker"].map(market_data['holdings_price'])
+    df_details["涨跌幅"] = df_details["Ticker"].map(market_data['holdings_change'])
     
+    # Reorder and Rename Ticker to Code
+    df_details = df_details.rename(columns={"Ticker": "代码"})
+    df_details = df_details[["代码", "名称", "权重", "当前价格", "涨跌幅"]]
+
     # Formatting
     st.dataframe(df_details.style.format({
-        "Weight": "{:.4f}",
-        "Current Price": "{:.2f}",
-        "Change %": "{:.2%}"
+        "权重": "{:.4f}",
+        "当前价格": "{:.2f}",
+        "涨跌幅": "{:.2%}"
     }))
 
 # Footer
