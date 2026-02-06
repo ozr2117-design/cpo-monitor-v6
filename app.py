@@ -212,12 +212,18 @@ with tab1:
         contrib_data.append({"股票名称": name, "贡献度": contrib, "权重": w, "涨跌幅": chg})
     
     df_contrib = pd.DataFrame(contrib_data)
-    fig_contrib = px.bar(df_contrib, x='股票名称', y='贡献度', 
-                         title="基金净值加权贡献度",
+    # Sort by contribution for better visualization
+    df_contrib = df_contrib.sort_values(by="贡献度", ascending=True)
+    
+    fig_contrib = px.bar(df_contrib, y='股票名称', x='贡献度', 
+                         title="基金净值加权贡献度 (按贡献排序)",
                          color='贡献度',
-                         color_continuous_scale=['green', 'red']) # China Color: Red = Up, Green = Down.
-                         
-    fig_contrib.update_traces(marker_color=df_contrib['贡献度'].apply(lambda x: 'red' if x >= 0 else 'green'))
+                         orientation='h',
+                         text_auto='.3%',
+                         color_continuous_scale=['green', 'red'])
+    
+    fig_contrib.update_traces(marker_color=df_contrib['贡献度'].apply(lambda x: 'red' if x >= 0 else 'green'), textposition='outside')
+    fig_contrib.update_layout(yaxis_title=None, xaxis_title="贡献度")
     st.plotly_chart(fig_contrib, use_container_width=True)
 
 with tab2:
