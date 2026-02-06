@@ -3,7 +3,7 @@ import pandas as pd
 import yfinance as yf
 import plotly.graph_objects as go
 import plotly.express as px
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # Page Config
 st.set_page_config(
@@ -194,10 +194,9 @@ def check_signals(data, fund_sim_change):
 
 # --- Main App ---
 st.title("全球 CPO 监控 V6.0 🌍")
-# --- Main App ---
-st.title("全球 CPO 监控 V6.0 🌍")
 st.caption(f"跟踪基金: {FUND_CODE} | 实时模拟")
-st.caption(f"最后刷新时间: {datetime.now().strftime('%H:%M:%S')} (北京时间)")
+beijing_time = datetime.now(timezone(timedelta(hours=8))).strftime('%H:%M:%S')
+st.caption(f"最后刷新时间: {beijing_time} (北京时间)")
 
 # Fetch Data
 with st.spinner('Fetching Real-time Data...'):
