@@ -108,6 +108,42 @@ def fetch_data():
         data_cache['nq_change'] = 0.0
         data_cache['nq_price'] = 0.0
         
+    # Fetch NVDA
+    try:
+        nvda = yf.Ticker("NVDA")
+        nvda_hist = nvda.history(period="5d")
+        if len(nvda_hist) >= 2:
+            nvda_last = nvda_hist['Close'].iloc[-1]
+            nvda_prev = nvda_hist['Close'].iloc[-2]
+            nvda_change = (nvda_last - nvda_prev) / nvda_prev
+            data_cache['nvda_change'] = nvda_change
+            data_cache['nvda_price'] = nvda_last
+        else:
+            data_cache['nvda_change'] = 0.0
+            data_cache['nvda_price'] = 0.0
+    except Exception as e:
+        st.error(f"Error fetching NVDA: {e}")
+        data_cache['nvda_change'] = 0.0
+        data_cache['nvda_price'] = 0.0
+
+    # Fetch COHR
+    try:
+        cohr = yf.Ticker("COHR")
+        cohr_hist = cohr.history(period="5d")
+        if len(cohr_hist) >= 2:
+            cohr_last = cohr_hist['Close'].iloc[-1]
+            cohr_prev = cohr_hist['Close'].iloc[-2]
+            cohr_change = (cohr_last - cohr_prev) / cohr_prev
+            data_cache['cohr_change'] = cohr_change
+            data_cache['cohr_price'] = cohr_last
+        else:
+            data_cache['cohr_change'] = 0.0
+            data_cache['cohr_price'] = 0.0
+    except Exception as e:
+        st.error(f"Error fetching COHR: {e}")
+        data_cache['cohr_change'] = 0.0
+        data_cache['cohr_price'] = 0.0
+        
     return data_cache
 
 def calculate_fund_sim(holdings_changes):
@@ -189,12 +225,14 @@ with col3:
     st.metric("北向资金", "Wait", delta="--")
 
 with col4:
-    # Placeholder for NVDA
-    st.metric("NVDA", "--", delta="--")
+    # NVDA
+    nvda_val = market_data.get('nvda_change', 0.0)
+    st.metric("NVDA", f"{market_data.get('nvda_price', 0.0):.2f}", delta=f"{nvda_val:.2%}")
 
 with col5:
-    # Placeholder for COHR
-    st.metric("COHR", "--", delta="--")
+    # COHR
+    cohr_val = market_data.get('cohr_change', 0.0)
+    st.metric("COHR", f"{market_data.get('cohr_price', 0.0):.2f}", delta=f"{cohr_val:.2%}")
 
 st.divider()
 
