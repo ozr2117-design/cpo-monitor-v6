@@ -194,7 +194,10 @@ def check_signals(data, fund_sim_change):
 
 # --- Main App ---
 st.title("全球 CPO 监控 V6.0 🌍")
+# --- Main App ---
+st.title("全球 CPO 监控 V6.0 🌍")
 st.caption(f"跟踪基金: {FUND_CODE} | 实时模拟")
+st.caption(f"最后刷新时间: {datetime.now().strftime('%H:%M:%S')} (北京时间)")
 
 # Fetch Data
 with st.spinner('Fetching Real-time Data...'):
@@ -205,9 +208,17 @@ fund_sim_val = calculate_fund_sim(market_data['holdings_change'])
 alerts = check_signals(market_data, fund_sim_val)
 
 # Alerts Toast
+# Alerts Toast
+if 'last_alerts' not in st.session_state:
+    st.session_state['last_alerts'] = []
+
 if alerts:
-    for alert in alerts:
+    new_alerts = [a for a in alerts if a not in st.session_state['last_alerts']]
+    for alert in new_alerts:
         st.toast(alert, icon="🔔")
+    st.session_state['last_alerts'] = alerts
+else:
+    st.session_state['last_alerts'] = []
 
 # --- Layout Section A: Cockpit ---
 st.subheader("🚀 实时驾驶舱")
